@@ -14,6 +14,32 @@
 	#include "WProgram.h"
 #endif
 
+#ifndef MSTEP_MAX_COUNT
+#define MSTEP_MAX_COUNT 5
+#endif
+
+
+#include "MultiStepperUtillities.h"
+#include "Stepperdriver.h"
+#include "StepLinearDriverInstruction.h"
+
+class MultiStepperClass
+{
+private:
+	StepperDriver* m_drivers[MSTEP_MAX_COUNT];
+	size_t m_count;
+public:
+private:
+public:
+	MultiStepperClass();
+	void AttachDriver(StepperDriver* driver);
+	void UpdateDrivers();
+};
+
+extern MultiStepperClass MStep;
+
+//You can also use MStep as a shortcut
+#define MultiStepper MStep
 
 #endif
 
