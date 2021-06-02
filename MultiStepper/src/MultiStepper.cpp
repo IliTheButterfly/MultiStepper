@@ -13,6 +13,11 @@ MultiStepperClass::MultiStepperClass()
 	m_count = 0;
 }
 
+void MultiStepperClass::AttachCallback(instructionCB_t callback)
+{
+	m_callback = callback;
+}
+
 void MultiStepperClass::AttachDriver(StepperDriver* driver)
 {
 #ifdef MSTEP_DEBUG
@@ -48,6 +53,10 @@ void MultiStepperClass::UpdateDrivers()
 		{
 			auto result = m_drivers[i]->Instruction->Execute(m_drivers[i]);
 			if (result == DriverInstructionResult::Done) m_drivers[i]->SetInstruction(nullptr);
+			if (m_callback != nullptr)
+			{
+				m_callback(i, result);
+			}
 		}
 	}
 }

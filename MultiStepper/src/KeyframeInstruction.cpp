@@ -1,35 +1,47 @@
-#include "StepLinearDriverInstruction.h"
+#include "KeyframeInstruction.h"
 
-StepLinearDriverInstruction::StepLinearDriverInstruction(float sps, int32_t steps)
+int8_t KeyframeDriverInstruction::Repeat(int8_t step, int8_t length)
 {
-	this->sps = sps;
-	this->dir = steps > 0;
-	this->steps = this->dir ? steps : -steps;
-    this->pulseDelay = 0;
+    return step < 0 ? length + step : step % length;
 }
 
-DriverInstructionResult StepLinearDriverInstruction::Execute(StepperDriver* driver)
+KeyframeDriverInstruction::KeyframeDriverInstruction(TimeSync* sync, Keyframe start, Keyframe end)
 {
-	if (pulseDelay == 0)
-	{
+    m_sync = sync;
+    m_start = start;
+    m_end = end;
+    float ms = end.MS - start.MS;
+    //DebugValue(ms);
+    int32_t stps = end.Steps - start.Steps;
+    this->dir = stps > 0;
+	this->steps = this->dir ? stps : -2 * stps;
+    //DebugValue(steps);
+    /*Serial.print("Stps:");
+    Serial.println(stps);
+    Serial.print("Steps:");
+    Serial.println(steps);
+    Serial.print("Dir:");
+    Serial.println(dir);
+    Serial.print("ms / 1000:");
+    Serial.println(ms / 1000.0f);*/
 
-		pulseDelay = (uint32_t)(1000000.0f / sps);
-		/*digitalWrite(driver->Dir, dir);*/
-#ifdef MSTEP_DEBUG
-        MSTEP_DEBUG_STREAM.print("Sps: ");
-        MSTEP_DEBUG_STREAM.println(sps);
-		MSTEP_DEBUG_STREAM.print("New instruction: delay: ");
-		MSTEP_DEBUG_STREAM.println(pulseDelay);
-#endif
-		//delayMicroseconds(1);
-	}
+    //Serial.println((1000000.0f / ((float)steps * (ms / 1000.0f))));
+    if (steps != 0) pulseDelay = (uint32_t)(ms / (float)steps * 1000.0f);
+    this->nextPulse = m_start.MS * 1000L + pulseDelay;
+}
+
+DriverInstructionResult KeyframeDriverInstruction::Execute(StepperDriver* driver)
+{
     if (pulseDelay == 0) pulseDelay = 1;
 
-    uint32_t now = micros();
+    /*Serial.print("New instruction: delay: ");
+    Serial.println(pulseDelay);*/
+
+    uint32_t now = m_sync->CurrentMicros();
     // move only if the appropriate delay has passed:
-    if (now >= nextPulse)
+    if (steps > 0 && now >= nextPulse)
     {
-        if (dir == 1)
+        /*if (this->dir == 1)
         {
             thisStep++;
             if (thisStep == driver->NumberOfSteps) {
@@ -42,16 +54,20 @@ DriverInstructionResult StepLinearDriverInstruction::Execute(StepperDriver* driv
                 thisStep = driver->NumberOfSteps;
             }
             thisStep--;
+        }*/
+        if (driver->StepCompatibility == StepType::Sixteenth)
+        {
+            driver->thisStep = dir ? driver->thisStep - 1 : driver->thisStep + 1;
+            driver->thisStep = Repeat(driver->thisStep, 10);
         }
-        if (driver->StepCompatibility == StepType::Sixteenth) thisStep %= 10;
-        else thisStep %= 4;
-		nextPulse = nextPulse == 0 ? now + pulseDelay : nextPulse + pulseDelay;
-		/*if (driver->MS1 != NOT_A_PIN) digitalWrite(driver->MS1, bitRead(driver->StepCompatibility, 0));
-		if (driver->MS2 != NOT_A_PIN) digitalWrite(driver->MS2, bitRead(driver->StepCompatibility, 1));
-		if (driver->MS3 != NOT_A_PIN) digitalWrite(driver->MS3, bitRead(driver->StepCompatibility, 2));*/
+        else driver->thisStep %= 4;
+        nextPulse += pulseDelay;
+        /*if (driver->MS1 != NOT_A_PIN) digitalWrite(driver->MS1, bitRead(driver->StepCompatibility, 0));
+        if (driver->MS2 != NOT_A_PIN) digitalWrite(driver->MS2, bitRead(driver->StepCompatibility, 1));
+        if (driver->MS3 != NOT_A_PIN) digitalWrite(driver->MS3, bitRead(driver->StepCompatibility, 2));*/
         if (driver->StepCompatibility == StepType::Step)
         {
-            switch (thisStep) {
+            switch (driver->thisStep) {
             case 0:  // 01
                 digitalWrite(driver->Step, LOW);
                 digitalWrite(driver->Dir, HIGH);
@@ -72,7 +88,7 @@ DriverInstructionResult StepLinearDriverInstruction::Execute(StepperDriver* driv
         }
         if (driver->StepCompatibility == StepType::Sixteenth)
         {
-            switch (thisStep) {
+            switch (driver->thisStep) {
             case 0:  // 01101
                 digitalWrite(driver->Dir, LOW);
                 digitalWrite(driver->Step, HIGH);
@@ -145,9 +161,9 @@ DriverInstructionResult StepLinearDriverInstruction::Execute(StepperDriver* driv
                 break;
             }
         }
-        thisStep = (thisStep + 1) % 10;
+        //thisStep = (thisStep + 1) % 10;
         steps--;
-	}
-	if (steps == 0) return DriverInstructionResult::Done;
-	return DriverInstructionResult::Success;
+    }
+    if (m_end.MS * 1000L <= now) return DriverInstructionResult::Done;
+    return DriverInstructionResult::Success;
 }

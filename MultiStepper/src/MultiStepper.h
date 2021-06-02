@@ -23,15 +23,19 @@
 #include "Stepperdriver.h"
 #include "StepLinearDriverInstruction.h"
 
+typedef void(*instructionCB_t)(uint16_t, DriverInstructionResult);
+
 class MultiStepperClass
 {
 private:
 	StepperDriver* m_drivers[MSTEP_MAX_COUNT];
 	size_t m_count;
+	instructionCB_t m_callback;
 public:
 private:
 public:
 	MultiStepperClass();
+	void AttachCallback(instructionCB_t callback);
 	void AttachDriver(StepperDriver* driver);
 	void UpdateDrivers();
 };

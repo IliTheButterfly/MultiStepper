@@ -12,7 +12,7 @@ private:
     int32_t steps;
     uint8_t thisStep;
     bool dir;
-    float rpm;
+    float sps;
 public:
     StepLinearDriverInstruction(float rpm, int32_t steps);
     DriverInstructionResult Execute(StepperDriver* driver) override;

@@ -22,6 +22,7 @@ struct StepperDriver
 	pin_t MS3 = NOT_A_PIN;
 	StepType StepCompatibility;
 	IDriverInstruction* Instruction;
+	int8_t thisStep;
 	StepperDriver() { }
 	StepperDriver(uint32_t numberOfSteps, pin_t step, pin_t dir)
 	{

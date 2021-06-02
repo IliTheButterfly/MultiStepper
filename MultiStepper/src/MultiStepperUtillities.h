@@ -7,7 +7,7 @@
 #include "WProgram.h"
 #endif
 
-#define MSTEP_DEBUG
+//#define MSTEP_DEBUG
 
 
 #ifdef MSTEP_DEBUG
