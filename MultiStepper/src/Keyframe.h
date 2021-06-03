@@ -16,7 +16,6 @@ struct Keyframe
 	void Print()
 	{
 		Serial.println(4);
-		delay(10);
 		Serial.print("ID: ");
 		Serial.print(ChannelID);
 		Serial.print(" MS: ");

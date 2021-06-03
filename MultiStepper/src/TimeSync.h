@@ -12,8 +12,11 @@ class TimeSync
 private:
 	uint32_t m_startMicros;
 public:
+	bool Started;
+public:
 	TimeSync();
 	void Start();
+	void Stop();
 	uint32_t CurrentMicros();
 };
 

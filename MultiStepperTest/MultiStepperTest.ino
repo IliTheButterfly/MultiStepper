@@ -71,6 +71,7 @@ StatusCode status = StatusCode::STReady;
 CircularBuffer Buffer = CircularBuffer(10);
 Keyframe last;
 TimeSync* sync = new TimeSync();
+bool Running;
 
 void ComputeInstruction(Keyframe start, Keyframe end)
 {
@@ -82,7 +83,11 @@ void ComputeInstruction(Keyframe start, Keyframe end)
 
 void InstructionCallback(uint16_t channelID, DriverInstructionResult result)
 {
-	if (!Buffer.Available()) return;
+	if (!Buffer.Available())
+	{
+		Running = false;
+		return;
+	}
 	if (channelID == 0 && result == DriverInstructionResult::Done)
 	{
 		auto kf = Buffer.Read();
@@ -107,14 +112,6 @@ void ReadSerial()
 	int cmd = Serial.parseInt();
 	switch (cmd)
 	{
-	case 0: // Keyframe packet
-	{
-		uint16_t id = Serial.parseInt();
-		uint32_t ms = Serial.parseInt();
-		uint32_t steps = Serial.parseInt();
-		Buffer.Write(Keyframe{ id, ms, steps });
-	}
-	break;
 	case 1: // Status request packet
 		Serial.println(status);
 		break;
@@ -133,7 +130,7 @@ void ReadSerial()
 		status = StatusCode::STRunning;
 		ComputeInstruction(start, end);
 		status = StatusCode::STReady;
-		sync->Start();
+		Running = true;
 	}
 		break;
 	case 5:
@@ -141,6 +138,14 @@ void ReadSerial()
 		break;
 	case 6:
 		sync->Start();
+		break;
+	case 7: // Keyframe packet
+	{
+		uint16_t id = Serial.parseInt();
+		uint32_t ms = Serial.parseInt();
+		uint32_t steps = Serial.parseInt();
+		Buffer.Write(Keyframe{ id, ms, steps });
+	}
 		break;
 	default:
 		break;

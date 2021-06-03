@@ -36,7 +36,7 @@ DriverInstructionResult KeyframeDriverInstruction::Execute(StepperDriver* driver
 
     /*Serial.print("New instruction: delay: ");
     Serial.println(pulseDelay);*/
-
+    if (!m_sync->Started) m_sync->Start();
     uint32_t now = m_sync->CurrentMicros();
     // move only if the appropriate delay has passed:
     if (steps > 0 && now >= nextPulse)
