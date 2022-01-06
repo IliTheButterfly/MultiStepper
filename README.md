@@ -31,6 +31,10 @@ void InstructionCallback(uint16_t channelID, DriverInstructionResult result)
     // Manage next instruction here
 }
 ```
+Then call this:
+```cpp
+MStep.AttachCallback(InstructionCallback);
+```
 
 ## Updating the ```StepperDrivers```
 After that, you need to call ```MStep.UpdateDrivers()``` as often as possible:
