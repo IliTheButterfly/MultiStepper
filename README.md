@@ -60,7 +60,7 @@ void setup()
 
 ## User defined Instructions
 ```cpp
-class MyDriverInstruction : IDriverInstruction
+class MyDriverInstruction : public IDriverInstruction
 {
 private:
 	int m_stepsLeft;
